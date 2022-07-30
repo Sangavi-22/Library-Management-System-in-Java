@@ -1,0 +1,36 @@
+package Controller.ControlBook;
+import java.time.LocalDate;
+import java.util.ArrayList;
+public interface BookControllerService {
+    void setInputs();
+    void setBookId(int bookId);
+    int getBookId();
+    void setBookLocationId(int locationId);
+    int getBookLocation();
+    void setBookName(String bookName);
+    String getBookName();
+    void setPublicationName(String publicationName);
+    String getPublicationName();
+    void setBookCost(int bookCost);
+    int getBookCost();
+    void setBookCount();
+    int getBookCount();
+    void updateBookCount();
+    void setNoOfPages(int pages);
+    int getNoOfPages();
+    void setPageLayout(String pageLayout);
+    String getPageLayout();
+    void addAuthorName(String authorName);
+    ArrayList<String> getAuthorsName();
+    void setBookIssueDate();
+    LocalDate getIssueDate();
+    void setBookDueDate();
+    LocalDate getBookDueDate();
+    void setBookReturnedDateForReturn();
+    void setBookReturnedDateForRenew();
+    LocalDate getBookReturnedDate();
+    long hasExpired();
+    void updateView();
+    void printDates();
+    void printBookId();
+}
