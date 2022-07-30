@@ -1,0 +1,22 @@
+
+
+package Controller.ControlLibrarian;
+
+public interface LibrarianAccountControllerService {
+    void setInputs(String userName,String password,int userId);
+    void addLibrarianToDataSource();
+    void menu();
+    void setName(String name);
+    String getName();
+    void setEmail(String email);
+    String getEmail();
+    void setMobileNum(long mobileNum);
+    long getMobileNum();
+    void setUserName(String userName);
+    String getUserName();
+    void setPassword(String password);
+    String getPassword();
+    void setLibrarianId(int id);
+    int getLibrarianId();
+    void updateView();
+}
