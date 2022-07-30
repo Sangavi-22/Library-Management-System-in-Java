@@ -1,0 +1,21 @@
+package Administator;
+import DataStorage.DataSource;
+import DataStorage.DataSourceService;
+import Input.InputsFromUser;
+public class Admin implements AdminService {
+    private int id = 0;
+    private int memberType;
+    private DataSourceService dataSource= DataSource.getInstance();
+    InputsFromUser inputsFromUser = new InputsFromUser();
+    public int generateId() {
+        memberType = inputsFromUser.inputMemberType();
+        if (memberType == 1) {
+            id=dataSource.getIdForLibrarian()+1;
+        } else if (memberType == 2) {
+            id=dataSource.getIdForStudent()+1;
+        } else {
+            id=0;
+        }
+        return id;
+    }
+}
