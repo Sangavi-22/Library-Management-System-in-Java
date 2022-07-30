@@ -1,0 +1,208 @@
+package Controller.ControlLibrary;
+import Controller.ControlBook.BookController;
+import Controller.ControlStudent.StudentAccountController;
+import Model.*;
+import View.ViewBook.BookView;
+import View.ViewBook.PrintBookInfoView;
+import View.ViewLibrary.LibraryViewService;
+import java.util.ArrayList;
+import java.util.HashMap;
+import Controller.ControlBook.BookControllerService;
+import Controller.ControlStudent.StudentAccountControllerService;
+import DataStorage.DataSource;
+import DataStorage.DataSourceService;
+import View.ViewStudent.PrintStudentInfoView;
+import View.ViewStudent.StudentAccountView;
+import View.ViewStudent.StudentMenuView;
+public class LibraryController implements LibraryControllerService {
+    private final LibraryModel model;
+    private final LibraryViewService view;
+    private final DataSourceService dataSource=DataSource.getInstance();
+    private  HashMap<Integer, StudentAccountModel>borrowerDetails;
+    public LibraryController(LibraryModel model,LibraryViewService view){
+        this.model=model;
+        this.view=view;
+    }
+    public void setPhoneNum(){
+        this.model.setPhoneNum();
+    }
+    public String getPhoneNum(){
+        return this.model.getPhoneNum();
+    }
+    public void updateView(){
+        view.printPhoneNum(this.getPhoneNum());
+    }
+    public void viewBooks(){
+        ArrayList<Integer>ids=dataSource.getBooks();
+        for(int id:ids){
+            BookControllerService bookController =new BookController(dataSource.getBookDetails(id),new BookDatesModel(),dataSource.getBookPages(id),dataSource.getBookAuthors(id),new BookView(),new PrintBookInfoView());
+            bookController.updateView();
+        }
+    }
+    public void addBook(int bookId, BookControllerService bookController, BookDetailsModel bookDetailsModel, BookDatesModel bookDatesModel,
+                        BookPagesModel bookPagesModel,BookAuthorModel bookAuthorModel){
+        bookId=model.getBookIdForBook()+1;
+        int locationId;
+        if(dataSource.getLastBookLocation()!=0) {
+            locationId=dataSource.getLastBookLocation()+1;
+        }
+        else {
+            locationId = 1;
+        }
+        bookController.setBookLocationId(locationId);
+        bookController.setBookId(bookId);
+        dataSource.addBookDetails(bookId,bookDetailsModel);
+        dataSource.addBookDate(bookId,bookDatesModel);
+        dataSource.addBookAuthors(bookId,bookAuthorModel);
+        dataSource.addBookPages(bookId,bookPagesModel);
+        dataSource.addBookToLibrary(bookId,50);
+        bookController.updateView();
+    }
+    public boolean incrementBookCount(int id){
+        boolean found=true;
+        if(dataSource.containsBookDetails(id)) {
+            dataSource.updateBookCount(id,1);
+            BookControllerService bookController =new BookController(dataSource.getBookDetails(id),new BookDatesModel(),dataSource.getBookPages(id),dataSource.getBookAuthors(id),new BookView(),new PrintBookInfoView());
+            bookController.updateView();
+            found=true;
+        }
+        else {
+            found = false;
+        }
+        return found;
+    }
+    public boolean removeBook(int id){
+        boolean removed;
+        if(dataSource.containsBookDetails(id)) {
+            dataSource.removeBookDetails(id);
+            dataSource.removeBookDate(id);
+            dataSource.removeBookAuthors(id);
+            dataSource.removeBookPages(id);
+            removed=true;
+        }
+        else {
+            removed = false;
+        }
+       return removed;
+    }
+    public boolean searchBookByItsId(int id){
+        boolean found=true;
+        if(dataSource.containsBookDetails(id)) {
+            BookControllerService bookController =new BookController(dataSource.getBookDetails(id),new BookDatesModel(),dataSource.getBookPages(id),dataSource.getBookAuthors(id),new BookView(),new PrintBookInfoView());
+            bookController.updateView();
+            found=true;
+        }
+        else {
+            found = false;
+        }
+        return found;
+    }
+    public int searchBookByItsName(String book) {
+        int found=0;
+        ArrayList<Integer> bookIds=dataSource.getBookId(book);
+        if(bookIds.size()>0) {
+            for (int id : bookIds) {
+                BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+                bookController.updateView();
+            }
+            found=1;
+        }
+        return found;
+    }
+    public int searchBookByItsAuthorName(String authorName){
+        int found=0;
+        ArrayList<Integer>bookIds=dataSource.getBookIdWithAuthor(authorName);
+        if(bookIds.size()>0) {
+            for (int id : bookIds) {
+                BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+                bookController.updateView();
+                found=1;
+            }
+        }
+        return found;
+    }
+    public boolean borrowBook(int id, StudentAccountModel studentAccountModel) {
+        boolean found;
+        if (dataSource.containsBookDetails(id) && dataSource.bookAvailable(id)>0){
+            BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+            dataSource.updateBookCount(id, -1);
+            bookController.setBookIssueDate();
+            bookController.setBookDueDate();
+            bookController.updateView();
+            bookController.printDates();
+            dataSource.addBorrower(id, studentAccountModel);
+            found=true;
+        }
+        else {
+            found=false;
+        }
+        return found;
+    }
+    public int viewBorrowedBooks(StudentAccountModel studentAccountModel) {
+        int found=0;
+        borrowerDetails = dataSource.getBorrowers();
+        for(int id:borrowerDetails.keySet()) {
+            if(borrowerDetails.get(id).getUserName().equals(studentAccountModel.getUserName())) {
+                BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+                bookController.setBookIssueDate();
+                bookController.setBookDueDate();
+                bookController.updateView();
+                bookController.printDates();
+                found++;
+            }
+        }
+        return found;
+    }
+    public void viewBorrowers(){
+        borrowerDetails = dataSource.getBorrowers();
+        if(borrowerDetails.size()>0) {
+            for(int id:borrowerDetails.keySet()) {
+                StudentAccountModel studentAccountModel=borrowerDetails.get(id);
+                BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+                bookController.setBookIssueDate();
+                bookController.setBookDueDate();
+                bookController.updateView();
+                bookController.printDates();
+                StudentAccountControllerService studentAccountController = new StudentAccountController(studentAccountModel, new StudentAccountView(), new StudentMenuView(), new PrintStudentInfoView());
+                studentAccountController.updateView();
+            }
+        }
+
+    }
+    public long returnBook(int id)
+    {
+        long difference;
+        borrowerDetails = dataSource.getBorrowers();
+        if (borrowerDetails.containsKey(id)) {
+            dataSource.removeBorrower(id);
+            BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+            dataSource.updateBookCount(id, 1);
+            bookController.setBookIssueDate();
+            bookController.setBookDueDate();
+            bookController.setBookReturnedDateForReturn();
+            difference=bookController.hasExpired();
+        }
+        else{
+            difference=0;
+        }
+        return difference;
+
+    }
+    public boolean renewBook(int id) {
+        boolean renewed=false;
+        borrowerDetails=dataSource.getBorrowers();
+        if (borrowerDetails.containsKey(id)) {
+            BookControllerService bookController = new BookController(dataSource.getBookDetails(id), new BookDatesModel(), dataSource.getBookPages(id), dataSource.getBookAuthors(id), new BookView(), new PrintBookInfoView());
+            bookController.setBookReturnedDateForRenew();
+            bookController.setBookDueDate();
+            bookController.setBookIssueDate();
+            bookController.printDates();
+            bookController.updateView();
+            renewed=true;
+        }
+        else{
+            renewed=false;
+        }
+        return renewed;
+    }
+}
